@@ -1,18 +1,31 @@
 
+import EulerUtil(mergeInf)
+import System.IO
 
-digitsum :: Integer -> Integer
-digitsum n = sum [read (c:"") :: Integer | c<-show n]
+crush :: Eq a => [(a,b)] -> [(a,[b])]
+crush [] = []
+crush ((a,b):ps) = helper (a,[b]) ps where
+  helper last [] = [last]
+  helper (n,arr) ((x,y):rest) = if n==x then helper (n,arr++[y]) rest
+                                else (n,arr):helper (x,[y]) rest
 
---isInt :: (RealFrac a) => a -> Bool
-isInt f = (floor f) == (ceiling f)
+perfectPowers = crush $ mergeInf [helper a $ a^2 | a<-[2..]] where
+  helper a last = (last,a):helper a (a*last)
 
---logBaseInt :: (Integral a, Rational b) => a -> a -> b
-logBaseInt base x = logBase (fromIntegral base) (fromIntegral x) 
+elemAsc :: Ord a => a -> [a] -> Bool
+elemAsc _ [] = False
+elemAsc n (x:xs) = n==x || (n > x && elemAsc n xs)
 
-getExp n = logBaseInt (digitsum n) n
+digitSum :: (Integral a, Read a, Show a) => a -> a
+digitSum n = sum [read [c] | c<-show n]
 
-isInteresting :: Integer -> Bool
-isInteresting n = if digitsum n == 1 then False else
-	      isInt $ getExp n
+dps = [n | (n,as)<-perfectPowers, digitSum n `elemAsc` as]
+
+showOneLine arr = mapM_ put arr where
+  put x = do
+    putStr $ show x ++ "\r"
+    hFlush stdout
+
 main = do
-     print $ take 10 [(n,getExp n) | n<-[10..], isInteresting n]
+  showOneLine $ take 30 $ zip [1..] dps
+  putStrLn "\nDone!"
