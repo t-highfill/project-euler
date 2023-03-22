@@ -33,10 +33,16 @@ instance (Show a) => Show (Expr a) where
 
 instance (Num a, Eq a) => Num (Expr a) where
     (Val x) + (Val y) = Val (x+y)
+    (Val 0) + e = e
+    e + (Val 0) = e
     (Div a b) + (Div c d) = if b==d then mkDiv (a+c) b else Add (Div a b) (Div c d)
     e1 + e2 = Add e1 e2
     
     (Val x) * (Val y) = Val (x*y)
+    (Val 0) * _ = Val 0
+    _ * (Val 0) = Val 0
+    (Val 1) * e = e
+    e * (Val 1) = e
     (Div a b) * (Div c d)
                         | c==b = mkDiv a d
                         | a==d = mkDiv b c
