@@ -4,9 +4,19 @@ module Expr where
 import Data.Ratio(numerator, denominator)
 
 data Expr a = Var {identifier :: String} | Val a | Add (Expr a) (Expr a) | Mul (Expr a) (Expr a)
-            | Neg (Expr a) | Div (Expr a) (Expr a) | Abs (Expr a) deriving Eq
+            | Neg (Expr a) | Div (Expr a) (Expr a) | Abs (Expr a)
 
-mkDiv :: (Eq a) => Expr a -> Expr a -> Expr a
+instance (Eq a) => Eq (Expr a) where
+    (Var i)==(Var j) = i==j
+    (Val a)==(Val b) = a==b
+    (Neg a)==(Neg b) = a==b
+    (Abs a)==(Abs b) = a==b
+    (Add a b)==(Add c d) = (a,b)==(c,d) || (a,b)==(d,c)
+    (Mul a b)==(Mul c d) = (a,b)==(c,d) || (a,b)==(d,c)
+    (Div a b)==(Div c d) = (a,b)==(c,d)
+    _ == _ = False
+
+mkDiv :: (Eq a, Num a) => Expr a -> Expr a -> Expr a
 mkDiv (Val 1) (Div e1 e2) = mkDiv e2 e1
 mkDiv e1 e2 = if e1 == e2 then Val 1 else Div e1 e2
 
@@ -21,7 +31,7 @@ instance (Show a) => Show (Expr a) where
     show (Div e1 e2) = exprShow2 '/' e1 e2
     show (Abs e) = '|':show e ++ "|"
 
-instance (Num a) => Num (Expr a) where
+instance (Num a, Eq a) => Num (Expr a) where
     (Val x) + (Val y) = Val (x+y)
     (Div a b) + (Div c d) = if b==d then mkDiv (a+c) b else Add (Div a b) (Div c d)
     e1 + e2 = Add e1 e2
@@ -41,12 +51,12 @@ instance (Num a) => Num (Expr a) where
     abs (Abs e) = Abs e
     abs e = Abs e
 
-    fromInteger = Val.fromInteger
+    fromInteger = Val . fromInteger
 
     signum (Val x) = Val (signum x)
     signum e = error "This is unknown"
 
-instance (Eq a) => Fractional (Expr a) where
+instance (Num a, Eq a) => Fractional (Expr a) where
     fromRational rat = (fromInteger $ numerator rat) / (fromInteger $ denominator rat)
     (/) = mkDiv
     recip e = (Val 1) / e
